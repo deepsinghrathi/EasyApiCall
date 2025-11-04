@@ -154,13 +154,13 @@ public class BaseActivity extends SubBaseActivity {
                                             }
                                         }
                                     }
-                                    UCrop.of(uri, Uri.fromFile(new File(Environment.getExternalStorageDirectory(), getFileName(uri)))).start(BaseActivity.this);
+                                    UCrop.of(uri, Uri.fromFile(new File(getFilesDir(), getFileName(uri)))).start(BaseActivity.this);
 //                                    cropImage(uri);
                                 } else {
                                     if (capture) {
                                         if (data.getExtras()!=null) {
                                             Bitmap photo = (Bitmap) data.getExtras().get("data");
-                                            uri = getImageUri(saveImageToExternalStorage(photo));
+                                            uri = getImageUri(saveImageToExternalStorage(BaseActivity.this,photo));
                                         }else{
                                             if (uri==null) {
                                                 showSnackbar(findViewById(android.R.id.content), "Image not selected.");
@@ -230,7 +230,7 @@ public class BaseActivity extends SubBaseActivity {
                         Uri uri = data.getData();
                         if (uri==null && data.getExtras() != null) {
                             Bitmap photo = (Bitmap) data.getExtras().get("data");
-                            uri = getImageUri(saveImageToExternalStorage(photo));
+                            uri = getImageUri(saveImageToExternalStorage(BaseActivity.this,photo));
                         } else {
                             if (uri==null) {
                                 showSnackbar(findViewById(android.R.id.content), "Image not selected.");
@@ -285,6 +285,29 @@ public class BaseActivity extends SubBaseActivity {
 
         return file.getAbsolutePath();
     }
+
+    private String saveImageToExternalStorage(Context context, Bitmap imageBitmap) {
+        // Create or access app-private "profile" folder inside internal storage
+        File myDir = new File(context.getFilesDir(), "profile");
+        if (!myDir.exists()) {
+            myDir.mkdirs();
+        }
+
+        // Generate unique filename
+        String fileName = "image_" + System.currentTimeMillis() + ".jpg";
+        File file = new File(myDir, fileName);
+
+        try (FileOutputStream out = new FileOutputStream(file)) {
+            // Save the bitmap as a JPEG
+            imageBitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
+            out.flush();
+            return file.getAbsolutePath(); // ✅ Return private absolute path
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
 
     private Uri getImageUri(String fileUri){
         File imageFile = new File(fileUri);
