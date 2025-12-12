@@ -1,5 +1,6 @@
 package com.deep.apicall;
 
+import android.Manifest;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -8,6 +9,7 @@ import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresPermission;
 
 import com.google.gson.Gson;
 
@@ -42,7 +44,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
-import okhttp3.logging.HttpLoggingInterceptor;
 
 /** @noinspection unused*/
 public class Api {
@@ -60,11 +61,11 @@ public class Api {
         File httpCacheDirectory = new File(context.getCacheDir(), "http-cache");
         int cacheSize = 10 * 1024 * 1024; // 10 MiB
         Cache cache = new Cache(httpCacheDirectory, cacheSize);
-        HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
-        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+//        HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
+//        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
         client = new OkHttpClient.Builder()
                 .cache(cache)
-                .addInterceptor(loggingInterceptor)
+//                .addInterceptor(loggingInterceptor)
 //                .addInterceptor(new GzipRequestInterceptor())
                 .connectionPool(new ConnectionPool(5, 5, TimeUnit.MINUTES))
                 .connectTimeout(30, TimeUnit.SECONDS) // Increase connection timeout
@@ -79,10 +80,10 @@ public class Api {
     }
 
     public Api(String TAG,String baseUrl) {
-        HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
-        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+//        HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
+//        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
         client = new OkHttpClient.Builder()
-                .addInterceptor(loggingInterceptor)
+//                .addInterceptor(loggingInterceptor)
 //                .addInterceptor(new GzipRequestInterceptor())
                 .connectionPool(new ConnectionPool(5, 5, TimeUnit.MINUTES))
                 .connectTimeout(30, TimeUnit.SECONDS) // Increase connection timeout
@@ -272,6 +273,7 @@ public class Api {
      * @deprecated  To update your existing code and use the execute method instead of the deprecated
      * ...
      */
+    @RequiresPermission(Manifest.permission.ACCESS_NETWORK_STATE)
     @Deprecated
     public void call(String url, @NonNull Response response) {
         dismissInternet();
@@ -306,14 +308,8 @@ public class Api {
             Handler handler = new Handler(Looper.getMainLooper());
             executor.execute(() -> {
                 try {
-
-//                String PROXY_SERVER_HOST = "promotionwala.co.in";
-//                int PROXY_SERVER_PORT = 8088;
-//                Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(PROXY_SERVER_HOST, PROXY_SERVER_PORT));
-
                     OkHttpClient client = new OkHttpClient().newBuilder()
                             .build();
-                    //MediaType mediaType = MediaType.parse("text/plain");
 
                     log("called url",BASE_URL + finalUrl);
 
@@ -322,14 +318,6 @@ public class Api {
                             .method(method, body)
                             .build();
                     okhttp3.Response res = client.newCall(request).execute();
-                    //Log.e(TAG, "call: "+res.headers());
-
-//                List<String> Cookielist = res.headers().values("Set-Cookie");
-//                for (String s : Cookielist){
-//                    Log.e(TAG, "call: "+s );
-//                }
-//                String v = (Cookielist .get(0).split(";"))[0];
-//                Log.e(TAG, "call: "+jsessionid );
 
                     int responseCode = res.code();
                     StringBuilder sBuilder1 = new StringBuilder();
@@ -424,6 +412,7 @@ public class Api {
     private static final int MAX_RETRIES = 3;
     private static final int INITIAL_BACKOFF_SECONDS = 1;
 
+    @RequiresPermission(Manifest.permission.ACCESS_NETWORK_STATE)
     public void execute(String url, @NonNull Response response) {
         dismissInternet();
 
@@ -462,11 +451,6 @@ public class Api {
                 }
             }
         }
-
-
-//                .header("Content-Type", "application/json; charset=utf-8")
-//                .header("Accept", "application/json")
-//                .header("Accept-Encoding", "gzip")
 
         showProgress();
         log("called url",BASE_URL + finalUrl);
@@ -580,6 +564,7 @@ public class Api {
         showInternet();
     }
 
+    @RequiresPermission(Manifest.permission.ACCESS_NETWORK_STATE)
     private boolean checkInternet() {
         String status;
         if (context==null){
@@ -610,7 +595,7 @@ public class Api {
     private String embedUrl(String url) {
         StringBuilder u = new StringBuilder();
         u.append(url);
-        if (perms != null && perms.entrySet().size() > 0) {
+        if (perms != null && !perms.isEmpty()) {
             u.append("?");
             for (Map.Entry<String, String> entry : perms.entrySet()) {
                 u.append(entry.getKey()).append("=").append(entry.getValue()).append("&");
